@@ -1,6 +1,5 @@
 // https://raw.githubusercontent.com/extrabacon/python-shell/master/index.js
 //
-
 var EventEmitter = require('events').EventEmitter;
 var path = require('path');
 var util = require('util');

@@ -7,8 +7,16 @@ ENV MONGO_VERSION 3.1.6
 # set cluster child (shards, config) server ips
 # e.g. x.x.x.x:pppp[,...]
 #
-#ENV MONGO_CLUSTER_INSTANCES
-ENV MONGO_CLUSTER_HOST=$(hostname --ip-address)
+ENV MONGO_CLUSTER_CONFIGSVR=""
+ENV MONGO_CLUSTER_SHARDS=""
+ENV MONGO_CLUSTER_MONGOS=""
+
+ENV MONGO_CLUSTER_CNAME=""
+
+ENV MONGO_CLUSTER_UDP_PORT=29017
+
+ENV MONGO_CLUSTER_TIMEOUT=5000
+ENV MONGO_CLUSTER_RETRIES=3
 
 # add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added
 RUN groupadd -r mongodb && useradd -r -g mongodb mongodb

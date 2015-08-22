@@ -13,10 +13,12 @@ if [ "$1" = 'mongod' ] || [ "$1" = 'mongos' ]; then
 		set -- $numa "$@"
 	fi
 
-	if [ ! -z $MONGO_CLUSTER_SERVER ]; then
-		forever start /opt/cluster/index.js "$@"
-	fi
-	exec gosu mongodb "$@"
+	#if [ ! -z $MONGO_CLUSTER_SERVER ]; then
+	#	forever start /opt/cluster/index.js "$@"
+	#fi
+	#exec gosu mongodb "$@" --pidfilepath /run/mongodb.pid
+
+	exec gosu mongodb node /opt/cluster/index.js "$@"
 fi
 
 exec "$@"

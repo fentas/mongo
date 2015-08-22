@@ -17,7 +17,7 @@ module.exports = exports = new function() {
 
   udp.on("message", function (msg, rinfo) {
     var msg = JSON.parse(msg.toString('utf8')),
-        instance = common.getInstances()[rinfo.host+':'+rinfo.port]
+        instance = common.getInstances(msg.type)
 
     if ( ! instance ) {
       console.log('New instance recognized', rinfo)
@@ -26,7 +26,7 @@ module.exports = exports = new function() {
 
     msg.args.unshift([msg.event, instance])
     for ( var i = 0 ; i < middleware.length ; i++ ) {
-      middleware[i].emit.apply(middleware[i], args)
+      middleware[i].emit.apply(middleware[i], msg.args)
     }
   })
 
