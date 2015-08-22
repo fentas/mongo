@@ -67,7 +67,9 @@ RUN set -x && \
   && rm -rf /var/lib/mongodb \
   && mv /etc/mongod.conf /etc/mongod.conf.orig
 
-RUN npm install -g forever
+RUN \
+  npm install -g forever && \
+  npm install -g bunyan
 
 RUN \
   mkdir -p /etc/mongo-cluster && chown -R mongodb:mongodb /etc/mongo-cluster && \

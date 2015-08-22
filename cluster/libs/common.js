@@ -2,10 +2,11 @@ var argv = require('minimist')(process.argv.slice(2)),
     mongo = require('mongodb-core'),
     udp = require('../utils/udp'),
     middleware = require('../utils/middleware'),
-    instance = require('../utils/instance'),
+    instance = require('./instance'),
     exec = require('../utils/exec'),
     util = require('util'),
-    dns = require('dns')
+    dns = require('dns'),
+    bunyan = require('bunyan')
 
 
 
@@ -19,98 +20,84 @@ common.prototype.addInstance = function(host) {
   var inst = new instance(host)
   return this.instances[inst.getFullAddress()] = inst;
 }
-common.prototype.getInstances = function(cb) {
-  if ( typeof cb !== 'function' ) return this.instances
+
+common.prototype.getInstances = function() {
+  return this.instances
+}
+
+common.prototype.lookupMongoCluster = function() {
+  bunyan.debug('lookup env MONGO_CLUSTER_INSTANCES', process.env['MONGO_CLUSTER_INSTANCES'])
 
   var env = process.env['MONGO_CLUSTER_INSTANCES'],
       instances = '',
       self = this
+
   self.instances = {}
 
-  if ( env.text(/^https?:/) ) {
+  var pongCount = 0,
+      pong = function() {
+        if ( ++pongCount == self.count ) {
+          bunyan.info('Pong complete.')
+          self.emit('lookup', self.instances)
+        }
+      }
 
+  if ( env.text(/^https?:/) ) {
+    bunyan.debug('Recognized MONGO_CLUSTER_INSTANCES as URL')
   }
   else if ( env.test(/^#/) ) {
+    bunyan.debug('Recognized MONGO_CLUSTER_INSTANCES as bash script')
+
     env = exec(env.substr(1))
-    if ( env.code === 0 )
-      instances = env.output
+    if ( env.code === 0 ) bunyan.error('bash script returned error code', env)
+    instances = env.output
   }
   else instances = env
 
   if ( instances.test(/^(.+,?)*$/) { //\d{3}\.\d{3})\.\d{3}\.\d{3}
+    bunyan.debug('Got mongo instance list', instances)
+
     instances = instances.split(',')
     self.count = instances.length
 
     for ( var i = 0 ; i < instances.length ; i++ ) {
+      bunyan.debug('Resolve A records', instances[i])
+
       dns.resolve(instances[i], 'A', function(error, addresses) {
         if ( error ) {
+          bunyan.debug('No A records, error occured', instances[i], error)
+          bunyan.debug('Lookup instance', instances[i].split(':')[0])
           dns.lookup(instances[i].split(':')[0], 4, function(error, address, family) {
             if ( err ) {
-              //TODO: what to do? ignore it?
-              console.warn('Could not resolve ['+instances[i]+']')
+              bunyan.error('Could not lookup instance. Instance will be ignored.', instances[i], error)
               --self.count
               return
             }
 
             var faddress = address + (':'+instances[i].split(':')[1] || '').replace(/:$/, '')
-            self.instances[faddress] = new instance(faddress)
+            self.instances[faddress] = new instance(faddress, pong)
 
-            if ( Object.keys(self.instances).length == self.count )
-              cb(self.instances)
+            if ( Object.keys(self.instances).length == self.count ) {
+              bunyan.debug('Everything resolved. Waiting for pong.')
+            }
           })
         }
         continue
       }
+      bunyan.debug('A records found')
       self.count += addresses.length - 1
 
-      for ( var x = 0 ; x < addresses.length ; x++ )
-        self.instances[addresses[x]] = new instance(addresses[x])
-      
-      if ( Object.keys(self.instances).length == self.count )
-        cb(self.instances)
+      for ( var x = 0 ; x < addresses.length ; x++ ) {
+        self.instances[addresses[x]] = new instance(addresses[x], pong)
+      }
+
+      if ( Object.keys(self.instances).length == self.count ) {
+        bunyan.debug('Everything resolved. Waiting for pong.')
+      }
     }
-
-
   }
-  else throw new TypeError('Maleformed MONGO_CLUSTER_INSTANCES')
+  else bunyan.fatal('Maleformed mongo instance list', instances)
 }
-
-common.prototype.brodcast = function(cb) {
-  var self = this
-
-  self.getInstances(function(instances) {
-    for ( address in self.instances )
-      self.instances[address].emit('ping')
-
-    var tries = 0
-    function allResponded() {
-      var count = 0,
-          again = {}
-
-      for ( address in self.instances ) {
-        if ( typeof self.instances[address].get('status') !== 'undefined' )
-          ++count
-        else
-          again[] = self.instances[address]
-      }
-
-      if ( self.count == count ) {
-        cb()
-        return
-      }
-      else if ( ++tries > process.env['MONGO_CLUSTER_RETRIES'] ) {
-        //TODO: what to do? ~ ignore or exit?
-        throw new Error('Given server not responding..')
-      }
-      else for ( var i = 0 ; i < again.length ; i++ )
-        again[i].emit('ping')
-
-      setTimeout(allResponded, process.env['MONGO_CLUSTER_TIMEOUT'])
-    }
-    setTimeout(allResponded, process.env['MONGO_CLUSTER_TIMEOUT'])
-  })
-}
-
 
 module.exports = exports = new function() {
   var use = new common(),
@@ -118,11 +105,13 @@ module.exports = exports = new function() {
       local = new instance()
 
   use.on('ping', function(instance) {
-    // get status
+    bunyan.info('Got ping.', instance.getFullAddress())
+    // send instance status
     instance.emit('status', local.toJSON())
   })
 
   use.on('status', function (instance, status) {
+    bunyan.info('Got status.', instance.getFullAddress())
     instance.set('status', status)
   })
 

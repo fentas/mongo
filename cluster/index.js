@@ -7,4 +7,4 @@ udp
 
   .bind(29017)
 
-common.brodcast()
+common.lookupMongoCluster()
