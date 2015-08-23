@@ -1,8 +1,9 @@
-var udp = require('../utils/udp'),
+var udp = require('../../utils/udp'),
     middleware = require('../../utils/middleware'),
     shell = require('../../utils/shell'),
     common = require('../common'),
     local = require('../local'),
+    util = require('util'),
     bunyan = require('../../utils/bunyan')()
 
 shell.defaultOptions = {
@@ -99,9 +100,9 @@ module.exports = exports = new function() {
           else if ( setup ) {
             if ( rs.length != 2 ) bunyan.warn('There should be 3 instances in %s. Given: %s.', local.get('replSet'), rs.length+1)
             var members = []
-            members[] = local.getFullAddress()
+            members.push(local.getFullAddress())
             for ( var i = 0 ; i < rs.length ; i++ )
-              members[] = rs[i].getFullAddress()
+              members.push(rs[i].getFullAddress())
 
             shell.run('_.rs.add.sh', {
               "args": {
@@ -136,7 +137,7 @@ module.exports = exports = new function() {
     if ( local.status == 'configured' ) return;
 
     // gather instance information
-    var done = [],
+    var done = [];
     [
       '_.rs.status.sh',
       '_.rs.conf.sh',
@@ -146,7 +147,7 @@ module.exports = exports = new function() {
         if ( err ) bunyan.error({error: err}, '%s failed.', cmd)
         local.set(cmd.replace(/\.sh$/, ''), result[0])
 
-        done[] = true
+        done.push(true)
         if ( done.length == todo.length)
           use.emit('_setup')
       })

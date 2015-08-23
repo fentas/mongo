@@ -7,8 +7,6 @@ var udp = require('../utils/udp'),
     dns = require('dns'),
     bunyan = require('../utils/bunyan')()
 
-
-
 util.inherits(common, middleware)
 function common() {
   this.configsvr = null
@@ -19,7 +17,7 @@ function common() {
 
 common.prototype.addInstance = function(host, type) {
   var inst = new instance(host, type)
-  this[type][] = inst
+  this[type].push(inst)
   return inst
 }
 
@@ -32,13 +30,14 @@ common.prototype.getInstances = function(type) {
 }
 
 common.prototype.lookupMongoCluster = function(itype) {
-  bunyan.debug({MONGO_CLUSTER_INSTANCES: process.env['MONGO_CLUSTER_INSTANCES']}, 'lookup env.')
+  bunyan.debug({MONGO_CLUSTER_INSTANCES: process.env['MONGO_CLUSTER_INSTANCES']}, 'lookup env.');
 
   [
     process.env['MONGO_CLUSTER_CONFIGSVR'],
     process.env['MONGO_CLUSTER_SHARDS'],
     process.env['MONGO_CLUSTER_MONGOS']
-  ].forEach(function(env, z) {
+  ]
+  .forEach(function(env, z) {
     var type = ['configsvr', 'shard', 'mongos'][z],
         self = this,
         list = env,
@@ -63,7 +62,7 @@ common.prototype.lookupMongoCluster = function(itype) {
     }
     else instances = list
 
-    if ( /^(.+,?)*$/.test(instances) { //\d{3}\.\d{3})\.\d{3}\.\d{3}
+    if ( instances && /^(.+,?)+$/.test(instances) ) { //\d{3}\.\d{3})\.\d{3}\.\d{3}
       bunyan.debug({instances: instances}, 'Got mongo instance list.')
 
       instances = instances.split(',')
@@ -86,7 +85,7 @@ common.prototype.lookupMongoCluster = function(itype) {
               }
 
               inst.ping(pong)
-              self[type][] = inst
+              self[type].push(inst)
 
               if ( self[type].length == count ) {
                 bunyan.debug('Everything resolved. Waiting for pong.')
@@ -101,7 +100,7 @@ common.prototype.lookupMongoCluster = function(itype) {
           for ( var x = 0 ; x < addresses.length ; x++ ) {
              var inst = new instance(addresses[x], type)
              inst.ping(pong)
-             self[type][] = inst
+             self[type].push(inst)
           }
 
           if ( self[type].length == count ) {

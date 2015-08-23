@@ -13,7 +13,7 @@ module.exports = exports = function(options) {
       streams: [
         {
           type: 'rotating-file',
-          path: '/etc/mongo-cluster/messages.log',
+          path: '/var/log/mongo-cluster/messages.log',
           period: '1d',
           count: 3
         }

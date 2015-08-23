@@ -1,8 +1,5 @@
 var argv = require('minimist')(process.argv.slice(2)),
-    mongo = require('mongodb-core'),
     dgram = require("dgram"),
-    instances = require('libs/cluster-instances'),
-    jsonb = require('json-buffer'),
     common = require('../libs/common')
 
 module.exports = exports = new function() {
@@ -34,7 +31,8 @@ module.exports = exports = new function() {
   })
 
   udp.use = function(use) {
-    middlewares[] = use
+    middlewares.push(use)
+    return this
   }
 
   return udp

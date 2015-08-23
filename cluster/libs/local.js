@@ -6,6 +6,7 @@ var argv = require('minimist')(process.argv.slice(2)),
 util.inherits(local, instance)
 function local() {
   //TODO: check persistent
+  instance.call(this)
 
   this.set('started', +new Date)
   this.set('status', 'unconfigured')
@@ -36,8 +37,11 @@ function local() {
       this.set('type', 'mongos')
       this.set('port', (argv['port'] ? argv['port'] : 27017))
       break;
+    default:
+      bunyan.fatal({args: argv}, 'Can not figure out instance type.')
+      process.exit(2)
   }
-
 }
 
+// singleton
 module.exports = exports = new local

@@ -1,6 +1,5 @@
 var argv = require('minimist')(process.argv.slice(2)),
     dgram = require("dgram"),
-    local = require('./local'),
     dns = require('dns'),
     udp = dgram.createSocket("udp4"),
     bunyan = require('../utils/bunyan')()
@@ -8,9 +7,10 @@ var argv = require('minimist')(process.argv.slice(2)),
 
 function instance(host, type) {
   this.data = {}
-  this.set('type', type)
 
   if ( typeof host !== 'undefined' ) {
+    this.set('type', type)
+    
     var self = this
 
     if ( typeof host === 'string' )
@@ -42,9 +42,10 @@ instance.prototype.lookup = function(cb) {
 
 instance.prototype.ping = function(cb) {
   bunyan.debug({tries: tries}, 'Ping.')
-  this.emit('ping', local.toJSON())
+  this.emit('ping', this.toJSON())
 
-  var tries = 0
+  var tries = 0,
+      self = this
   var pong = function() {
     if ( typeof self.get('status') !== 'undefined' ) return cb.apply(self, [])
 
@@ -57,7 +58,7 @@ instance.prototype.ping = function(cb) {
     else {
       bunyan.debug({tries: tries}, 'Retry ping.')
 
-      self.emit('ping', local.toJSON())
+      self.emit('ping', self.toJSON())
       setTimeout(pong, process.env['MONGO_CLUSTER_TIMEOUT'])
     }
   }
@@ -66,9 +67,9 @@ instance.prototype.ping = function(cb) {
 
 instance.prototype.emit = function(event) {
   var msg = {
-    event: event,
-    type: this.get('type')
-    args: arguments.slice(1)
+    "event": event,
+    "type": this.get('type'),
+    "args": arguments.slice(1)
   }
   msg = new Buffer(JSON.stringify(msg))
   bunyan.debug({msg: msg, address: this.address, port: process.env['MONGO_CLUSTER_UDP_PORT']}, 'udp send.')
@@ -90,7 +91,7 @@ instance.prototype.set = function(data, value) {
   if ( typeof data == 'object' ) {
     return extend(this.data, data)
   }
-  return this.data[data] = key
+  return this.data[data] = value
 }
 instance.prototype.get = function(key) {
   return this.data[key]

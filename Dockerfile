@@ -84,7 +84,7 @@ RUN \
   npm install -g bunyan
 
 RUN \
-  mkdir -p /etc/mongo-cluster && chown -R mongodb:mongodb /etc/mongo-cluster && \
+  mkdir -p /var/log/mongo-cluster && chown -R mongodb:mongodb /var/log/mongo-cluster && \
   mkdir -p /data/db && chown -R mongodb:mongodb /data/db && \
   mkdir -p /data/configdb && chown -R mongodb:mongodb /data/configdb
 VOLUME /data/db
