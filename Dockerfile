@@ -56,7 +56,7 @@ RUN \
   chmod +x /usr/local/bin/gosu
 
 # grap jq for json parsing
-RUN curl -s -L 'https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64' -o /usr/local/bin/jq \
+RUN curl -o /usr/local/bin/jq -SL 'https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64' \
   chmod +x /usr/local/bin/jq
 
 # gpg: key 7F0CEB10: public key "Richard Kreuter <richard@10gen.com>" imported
