@@ -1,6 +1,6 @@
 var argv = require('minimist')(process.argv.slice(2)),
     dgram = require("dgram"),
-    config = require('../config'),
+    local = require('./local'),
     dns = require('dns'),
     udp = dgram.createSocket("udp4"),
     bunyan = require('../utils/bunyan')()
@@ -32,7 +32,7 @@ instance.prototype.lookup = function(cb) {
   dns.lookup(this.get('cname') || this.get('address'), 4, function(error, address, family) {
     cb.apply(self, arguments)
     if ( error ) {
-      bunyan.error('Could not lookup instance.', self.toString(), error)
+      bunyan.error({instance: self.toString(), error: error}, 'Could not lookup instance.')
       return
     }
 
@@ -41,8 +41,8 @@ instance.prototype.lookup = function(cb) {
 }
 
 instance.prototype.ping = function(cb) {
-  bunyan.debug('Ping.', tries)
-  this.emit('ping')
+  bunyan.debug({tries: tries}, 'Ping.')
+  this.emit('ping', local.toJSON())
 
   var tries = 0
   var pong = function() {
@@ -50,14 +50,14 @@ instance.prototype.ping = function(cb) {
 
 
     if ( ++tries > process.env['MONGO_CLUSTER_RETRIES'] ) {
-      bunyan.error('Instance did not responed', self.toString())
+      bunyan.error({instance: self.toString()}, 'Instance did not responed.')
 
       self.set('status', null)
     }
     else {
-      bunyan.debug('Retry ping.', tries)
+      bunyan.debug({tries: tries}, 'Retry ping.')
 
-      self.emit('ping')
+      self.emit('ping', local.toJSON())
       setTimeout(pong, process.env['MONGO_CLUSTER_TIMEOUT'])
     }
   }
@@ -71,7 +71,7 @@ instance.prototype.emit = function(event) {
     args: arguments.slice(1)
   }
   msg = new Buffer(JSON.stringify(msg))
-  bunyan.debug('udp.send', msg, this.address, process.env['MONGO_CLUSTER_UDP_PORT'])
+  bunyan.debug({msg: msg, address: this.address, port: process.env['MONGO_CLUSTER_UDP_PORT']}, 'udp send.')
 
   udp.send(msg, 0, msg.length, this.address, process.env['MONGO_CLUSTER_UDP_PORT'])
 }

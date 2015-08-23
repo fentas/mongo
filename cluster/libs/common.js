@@ -24,11 +24,15 @@ common.prototype.addInstance = function(host, type) {
 }
 
 common.prototype.getInstances = function(type) {
-  return this[type]
+  return this[type].filter(function(instance) {
+    // remove not reachable instances
+    if ( instance.get(status) )
+      return true
+  })
 }
 
 common.prototype.lookupMongoCluster = function(itype) {
-  bunyan.debug('lookup env MONGO_CLUSTER_INSTANCES', process.env['MONGO_CLUSTER_INSTANCES'])
+  bunyan.debug({MONGO_CLUSTER_INSTANCES: process.env['MONGO_CLUSTER_INSTANCES']}, 'lookup env.')
 
   [
     process.env['MONGO_CLUSTER_CONFIGSVR'],
@@ -51,27 +55,27 @@ common.prototype.lookupMongoCluster = function(itype) {
         }
 
     if ( /^#/.test(list) ) {
-      bunyan.debug('Recognized MONGO_CLUSTER_INSTANCES as bash script')
+      bunyan.debug('Recognized MONGO_CLUSTER_INSTANCES as bash script.')
 
       list = exec(list.substr(1))
-      if ( list.code === 0 ) bunyan.error('bash script returned error code', list)
+      if ( list.code === 0 ) bunyan.error({shell: list}, 'bash script returned error code.')
       instances = list.output
     }
     else instances = list
 
     if ( /^(.+,?)*$/.test(instances) { //\d{3}\.\d{3})\.\d{3}\.\d{3}
-      bunyan.debug('Got mongo instance list', instances)
+      bunyan.debug({instances: instances}, 'Got mongo instance list.')
 
       instances = instances.split(',')
       count = instances.length
 
       for ( var i = 0 ; i < instances.length ; i++ ) {
-        bunyan.debug('Resolve A records', instances[i])
+        bunyan.debug({instance: instances[i]}, 'Resolve A records.')
 
         dns.resolve(instances[i], 'A', function(error, addresses) {
           if ( error ) {
-            bunyan.debug('No A records, error occured', instances[i], error)
-            bunyan.debug('Lookup instance', instances[i].split(':')[0])
+            bunyan.debug({instance: instances[i], error: error}, 'No A records, error occured')
+            bunyan.debug({instance: instances[i].split(':')[0]}, 'Lookup instance.')
 
 
             var inst = new instance(address + (':'+instances[i].split(':')[1] || '').replace(/:$/, '') , type)
@@ -106,7 +110,7 @@ common.prototype.lookupMongoCluster = function(itype) {
         })
       }
     }
-    else bunyan.fatal('Maleformed mongo instance list', instances)
+    else bunyan.fatal({instances: instances}, 'Maleformed mongo instance list.')
   })
 }
 
@@ -114,14 +118,17 @@ module.exports = exports = new function() {
   var use = new common(),
       responses = []
 
-  use.on('ping', function(instance) {
-    bunyan.info('Got ping.', instance.toString())
-    // send instance status
+  use.on('ping', function(instance, status) {
+    bunyan.info({instance: instance.toString()}, 'Got ping.')
+
+    instance.set(status)
+    // send local instance status
     instance.emit('pong', local.toJSON())
   })
 
   use.on('pong', function (instance, status) {
-    bunyan.info('Got status.', instance.toString())
+    bunyan.info({instance: instance.toString()}, 'Got status.')
+
     instance.set(status)
   })
 

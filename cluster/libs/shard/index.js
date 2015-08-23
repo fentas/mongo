@@ -22,7 +22,7 @@ module.exports = exports = new function() {
     var cb = cb || function() {}
     // keep it up to date
     shell.run('_.db.isMaster', function(err, result) {
-      if ( err ) bunyan.error('_.db.isMaster failed', err)
+      if ( err ) bunyan.error({error: err}, '_.db.isMaster failed.')
       local.set('_.db.isMaster', result[0])
 
       cb()
@@ -58,8 +58,6 @@ module.exports = exports = new function() {
       else instance.emit('error', {'errmsg': 'i am not prime.'})
     })
   })
-
-  //TODO: add shard?
 
   use.on('_setup', function() {
     // replSet is in startup.
@@ -99,7 +97,7 @@ module.exports = exports = new function() {
             primary.emit('rs.add')
           }
           else if ( setup ) {
-            if ( rs.length != 2 ) bunyan.warn('There should be 3 instances in %s. Given: %s', local.get('replSet'), rs.length)
+            if ( rs.length != 2 ) bunyan.warn('There should be 3 instances in %s. Given: %s.', local.get('replSet'), rs.length+1)
             var members = []
             members[] = local.getFullAddress()
             for ( var i = 0 ; i < rs.length ; i++ )
@@ -111,10 +109,12 @@ module.exports = exports = new function() {
                 "members": members
               }
             }, function(err, result) {
-              if ( err ) bunyan.fatal('_.rs.add.sh failed', err)
+              if ( err ) bunyan.fatal({error: err}, '_.rs.add.sh failed.')
 
               local.set('_.rs.status', result[0])
             })
+
+            //TODO: if shard, then register to mongos
           }
 
           break;
@@ -125,7 +125,7 @@ module.exports = exports = new function() {
 
           break;
         default:
-          bunyan.error('Unknown startupStatus.', local.get('_.rs.status'))
+          bunyan.error({status: local.get('_.rs.status')}, 'Unknown startupStatus.')
       }
     }
   })
@@ -143,7 +143,7 @@ module.exports = exports = new function() {
       '_.rs.db.isMaster.sh'
     ].forEach(function(cmd, i, todo) {
       shell.run(cmd, function(err, result) {
-        if ( err ) bunyan.error(cmd + ' failed', err)
+        if ( err ) bunyan.error({error: err}, '%s failed.', cmd)
         local.set(cmd.replace(/\.sh$/, ''), result[0])
 
         done[] = true

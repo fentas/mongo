@@ -14,7 +14,7 @@ function local() {
   this.set('cname', process.env['MONGO_CLUSTER_CNAME'])
   this.lookup(function(error) {
     if ( error )
-      bunyan.fatal('Can not lookup local instance.', process.env['MONGO_CLUSTER_CNAME'], error)
+      bunyan.fatal({cname: process.env['MONGO_CLUSTER_CNAME'], error: error}, 'Can not lookup local instance.')
   })
 
   this.set('_.argv', argv)
@@ -22,14 +22,19 @@ function local() {
     case 'mongod':
       if ( argv['configsvr'] ) {
         this.set('type', 'configsvr')
+        this.set('port', (argv['port'] ? argv['port'] : 27019))
       }
       else {
         this.set('type', 'shard')
+        this.set('port', (
+          argv['port'] ? argv['port'] : ( argv['shardsvr'] ? 27018 : 27017 ))
+        )
       }
 
       break;
     case 'mongos':
       this.set('type', 'mongos')
+      this.set('port', (argv['port'] ? argv['port'] : 27017))
       break;
   }
 

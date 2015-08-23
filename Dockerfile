@@ -13,7 +13,7 @@ ENV MONGO_CLUSTER_MONGOS=""
 
 ENV MONGO_CLUSTER_CNAME=""
 
-ENV MONGO_CLUSTER_UDP_PORT=29017
+ENV MONGO_CLUSTER_UDP_PORT=27023
 
 ENV MONGO_CLUSTER_TIMEOUT=5000
 ENV MONGO_CLUSTER_RETRIES=3
@@ -95,6 +95,11 @@ COPY ./cluster /opt
 COPY docker-entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
 
-EXPOSE 29017
+# udp port
+EXPOSE 27023
+
+# default shard server port
 EXPOSE 27017
+# default mongod port
+EXPOSE 27018
 CMD ["mongod"]
