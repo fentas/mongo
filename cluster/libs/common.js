@@ -38,6 +38,8 @@ common.prototype.lookupMongoCluster = function(itype) {
     process.env['MONGO_CLUSTER_MONGOS']
   ]
   .forEach(function(env, z) {
+    if ( ! env ) return;
+    
     var type = ['configsvr', 'shard', 'mongos'][z],
         self = this,
         list = env,
