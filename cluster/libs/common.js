@@ -12,7 +12,7 @@ var udp = require('../utils/udp'),
 util.inherits(common, middleware)
 function common() {
   this.configsvr = null
-  this.shards = null
+  this.shard = null
   this.mongos = null
   this.count = 0
 }
@@ -35,7 +35,7 @@ common.prototype.lookupMongoCluster = function(itype) {
     process.env['MONGO_CLUSTER_SHARDS'],
     process.env['MONGO_CLUSTER_MONGOS']
   ].forEach(function(env, z) {
-    var type = ['configsvr', 'shards', 'mongos'][z],
+    var type = ['configsvr', 'shard', 'mongos'][z],
         self = this,
         list = env,
         instances = null,
@@ -46,7 +46,7 @@ common.prototype.lookupMongoCluster = function(itype) {
         pong = function() {
           if ( ++pongCount == count ) {
             bunyan.info('Pong complete.')
-            itype.emit('initialize', self[type])
+            itype.emit('_initialize', self[type])
           }
         }
 

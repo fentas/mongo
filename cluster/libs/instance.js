@@ -76,6 +76,12 @@ instance.prototype.emit = function(event) {
   udp.send(msg, 0, msg.length, this.address, process.env['MONGO_CLUSTER_UDP_PORT'])
 }
 
+instance.prototype.getFullAddress = function() {
+  return (
+    (this.get('cname') || this.get('address')) + ':' + this.get('port')
+  ).replace(/:$/, '')
+}
+
 instance.prototype.toString = function() {
   return this.get('dns') + '/' + this.get('address') + ':' + this.get('port')
 }
@@ -93,7 +99,7 @@ instance.prototype.get = function(key) {
 instance.prototype.toJSON = function() {
   return JSON.stringify(this.data, function(key, value) {
     // strip privates
-    if ( ! /^_/.test(key) ) return value
+    // if ( ! /^_[^\.]/.test(key) ) return value
   })
 }
 

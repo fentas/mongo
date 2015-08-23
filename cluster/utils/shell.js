@@ -27,16 +27,16 @@ function extend(obj) {
 
 /**
  * An interactive Bash shell exchanging data through stdio
- * @param {string} script    The bash script to execute
+ * @param {string} script    The shell script to execute
  * @param {object} [options] The launch options (also passed to child_process.spawn)
  * @constructor
  */
-var BashShell = function (script, options) {
+var Shell = function (script, options) {
 
     function resolve(type, val) {
         if (typeof val === 'string') {
             // use a built-in function using its name
-            return BashShell[type][val];
+            return Shell[type][val];
         } else if (typeof val === 'function') {
             // use a custom function
             return val;
@@ -47,18 +47,18 @@ var BashShell = function (script, options) {
     var errorData = '';
     EventEmitter.call(this);
 
-    options = extend({}, BashShell.defaultOptions, options);
-    var bashPath = options.bashPath || 'bash';
-    var bashOptions = toArray(options.bashOptions);
+    options = extend({}, Shell.defaultOptions, options);
+    var shellPath = options.shellPath || 'bash';
+    var shellOptions = toArray(options.shellOptions);
     var scriptArgs = toArray(options.args);
 
-    this.script = path.join(options.scriptPath || './bash', script);
-    this.command = bashOptions.concat(this.script, scriptArgs);
+    this.script = path.join(options.scriptPath || './shell', script);
+    this.command = shellOptions.concat(this.script, scriptArgs);
     this.mode = options.mode || 'text';
     this.formatter = resolve('format', options.formatter || this.mode);
     this.parser = resolve('parse', options.parser || this.mode);
     this.terminated = false;
-    this.childProcess = spawn(bashPath, this.command, options);
+    this.childProcess = spawn(shellPath, this.command, options);
 
     ['stdout', 'stdin', 'stderr'].forEach(function (name) {
         self[name] = self.childProcess[name];
@@ -67,7 +67,7 @@ var BashShell = function (script, options) {
 
     // parse incoming data on stdout
     if (this.parser) {
-        this.stdout.on('data', BashShell.prototype.receive.bind(this));
+        this.stdout.on('data', Shell.prototype.receive.bind(this));
     }
 
     // listen to stderr and emit errors for incoming data
@@ -84,8 +84,8 @@ var BashShell = function (script, options) {
                 err = new Error('process exited with code ' + code);
             }
             err = extend(err, {
-                executable: bashPath,
-                options: bashOptions.length ? bashOptions : null,
+                executable: shellPath,
+                options: shellOptions.length ? shellOptions : null,
                 script: self.script,
                 args: scriptArgs.length ? scriptArgs : null,
                 exitCode: code
@@ -101,13 +101,13 @@ var BashShell = function (script, options) {
         self._endCallback && self._endCallback(err);
     });
 };
-util.inherits(BashShell, EventEmitter);
+util.inherits(Shell, EventEmitter);
 
 // allow global overrides for options
-BashShell.defaultOptions = {};
+Shell.defaultOptions = {};
 
 // built-in formatters
-BashShell.format = {
+Shell.format = {
     text: function toText(data) {
         if (!data) return '';
         else if (typeof data !== 'string') return data.toString();
@@ -119,7 +119,7 @@ BashShell.format = {
 };
 
 // built-in parsers
-BashShell.parse = {
+Shell.parse = {
     text: function asText(data) {
         return data;
     },
@@ -133,15 +133,15 @@ BashShell.parse = {
  * @param  {string}   script   The script to execute
  * @param  {Object}   options  The execution options
  * @param  {Function} callback The callback function to invoke with the script results
- * @return {BashShell}       The BashShell instance
+ * @return {Shell}       The Shell instance
  */
-BashShell.run = function (script, options, callback) {
+Shell.run = function (script, options, callback) {
     if (typeof options === 'function') {
         callback = options;
         options = null;
     }
 
-    var pyshell = new BashShell(script, options);
+    var pyshell = new Shell(script, options);
     var output = [];
 
     return pyshell.on('message', function (message) {
@@ -157,7 +157,7 @@ BashShell.run = function (script, options, callback) {
  * @param  {string|Buffer} data The stderr contents to parse
  * @return {Error} The parsed error with extended stack trace when traceback is available
  */
-BashShell.prototype.parseError = function (data) {
+Shell.prototype.parseError = function (data) {
     var text = ''+data;
     var error;
 
@@ -182,9 +182,9 @@ BashShell.prototype.parseError = function (data) {
  * Sends a message to the Bash shell through stdin
  * Override this method to format data to be sent to the Bash process
  * @param {string|Object} data The message to send
- * @returns {BashShell} The same instance for chaining calls
+ * @returns {Shell} The same instance for chaining calls
  */
-BashShell.prototype.send = function (message) {
+Shell.prototype.send = function (message) {
     var data = this.formatter ? this.formatter(message) : message;
     if (this.mode !== 'binary') data += '\n';
     this.stdin.write(data);
@@ -197,7 +197,7 @@ BashShell.prototype.send = function (message) {
  * Override this method to parse incoming data from the Bash process into messages
  * @param {string|Buffer} data The data to parse into messages
  */
-BashShell.prototype.receive = function (data) {
+Shell.prototype.receive = function (data) {
     var self = this;
     var parts = (''+data).split(/\n/g);
 
@@ -229,12 +229,12 @@ BashShell.prototype.receive = function (data) {
 
 /**
  * Closes the stdin stream, which should cause the process to finish its work and close
- * @returns {BashShell} The same instance for chaining calls
+ * @returns {Shell} The same instance for chaining calls
  */
-BashShell.prototype.end = function (callback) {
+Shell.prototype.end = function (callback) {
     this.childProcess.stdin.end();
     this._endCallback = callback;
     return this;
 };
 
-module.exports = BashShell;
+module.exports = Shell;

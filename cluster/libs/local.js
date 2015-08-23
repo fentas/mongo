@@ -17,15 +17,14 @@ function local() {
       bunyan.fatal('Can not lookup local instance.', process.env['MONGO_CLUSTER_CNAME'], error)
   })
 
-  this.set('_argv', argv)
+  this.set('_.argv', argv)
   switch ( argv._[0] ) {
     case 'mongod':
       if ( argv['configsvr'] ) {
         this.set('type', 'configsvr')
       }
       else {
-        this.set('type', 'mongod')
-        this.set('replSet', argv['replSet'])
+        this.set('type', 'shard')
       }
 
       break;

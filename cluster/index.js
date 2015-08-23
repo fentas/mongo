@@ -7,7 +7,7 @@ var argv = require('minimist')(process.argv.slice(2)),
 // set up bunyan
 require('./utils/bunyan')({
 
-}})
+})
 
 // set up udp
 

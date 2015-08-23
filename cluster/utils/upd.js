@@ -17,11 +17,14 @@ module.exports = exports = new function() {
 
   udp.on("message", function (msg, rinfo) {
     var msg = JSON.parse(msg.toString('utf8')),
-        instance = common.getInstances(msg.type)
+        instance = common.getInstances(msg.type).filter(function(instance) {
+          if ( instance.get('address') == rinfo.address && instance.get('port') == rinfo.port )
+            return true
+        })[0]
 
     if ( ! instance ) {
       console.log('New instance recognized', rinfo)
-      instance = common.addInstance(rinfo)
+      instance = common.addInstance(rinfo, type)
     }
 
     msg.args.unshift([msg.event, instance])
