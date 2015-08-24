@@ -115,7 +115,10 @@ module.exports = exports = new function() {
               local.set('_.rs.status', result[0])
             })
 
-            //TODO: if shard, then register to mongos
+            // if shard there is a mongo, then register to mongos
+            // TODO: what if mongos is not started yet?
+            var mongos = common.getInstances('mongos')[0]
+            if ( mongos ) mongos.emit('sh.addShard')
           }
 
           break;
@@ -123,7 +126,7 @@ module.exports = exports = new function() {
         // url[]:   http://www.devthought.com/2012/09/18/fixing-mongodb-all-members-and-seeds-must-be-reachable-to-initiate-set/
         case 4:
           //TODO: reconfig members of prime
-
+          bunyan.error({status: local.get('_.rs.status')}, 'all members and seeds must be reachable to initiate set')
           break;
         default:
           bunyan.error({status: local.get('_.rs.status')}, 'Unknown startupStatus.')
