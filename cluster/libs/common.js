@@ -39,7 +39,7 @@ common.prototype.lookupMongoCluster = function(itype) {
   ]
   .forEach(function(env, z) {
     if ( ! env ) return;
-    
+
     var type = ['configsvr', 'shard', 'mongos'][z],
         self = this,
         list = env,
@@ -55,8 +55,15 @@ common.prototype.lookupMongoCluster = function(itype) {
           }
         }
 
-    if ( /^#/.test(list) ) {
-      bunyan.debug('Recognized MONGO_CLUSTER_INSTANCES as bash script.')
+    if ( /^https?/.test(list) ) {
+      bunyan.debug({list: list}, 'Recognized MONGO_CLUSTER_INSTANCES as http url.')
+
+      list = exec('curl -s -L "'+list+'"')
+      if ( list.code === 0 ) bunyan.error({shell: list}, 'bash script returned error code.')
+      instances = list.output
+    }
+    else if ( /^#/.test(list) ) {
+      bunyan.debug({list: list}, 'Recognized MONGO_CLUSTER_INSTANCES as bash script.')
 
       list = exec(list.substr(1))
       if ( list.code === 0 ) bunyan.error({shell: list}, 'bash script returned error code.')
