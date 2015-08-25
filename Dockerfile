@@ -95,6 +95,10 @@ VOLUME /data/configdb
 COPY ./cluster /opt
 
 COPY docker-entrypoint.sh /entrypoint.sh
+RUN \
+  chown mongodb:mongodb /entrypoint.sh && \
+  chmod +x /entrypoint.sh
+USER mongodb
 ENTRYPOINT ["/entrypoint.sh"]
 
 # udp port
