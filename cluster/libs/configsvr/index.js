@@ -19,7 +19,7 @@ module.exports = exports = new function() {
   var use = new mongos()
 
   // first run
-  common.on('_initialize', function(instances) {
+  common.on('_initialize', function() {
 
   })
 

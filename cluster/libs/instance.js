@@ -10,7 +10,7 @@ function instance(host, type) {
 
   if ( typeof host !== 'undefined' ) {
     this.set('type', type)
-    
+
     var self = this
 
     if ( typeof host === 'string' )

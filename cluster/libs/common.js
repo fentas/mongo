@@ -51,7 +51,10 @@ common.prototype.lookupMongoCluster = function(itype) {
         pong = function() {
           if ( ++pongCount == count ) {
             bunyan.info('Pong complete.')
-            itype.emit('_initialize', self[type])
+            if ( typeof itype == 'function' )
+              itype()
+            else
+              itype.emit('_initialize')
           }
         }
 

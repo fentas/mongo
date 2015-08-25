@@ -1,6 +1,8 @@
 var argv = require('minimist')(process.argv.slice(2)),
     util = require('util'),
     instance = require('./instance'),
+    Fiber = require('fibers'),
+    shell = require('../utils/shell'),
     bunyan = require('../utils/bunyan')()
 
 util.inherits(local, instance)
@@ -41,6 +43,25 @@ function local() {
       bunyan.fatal({args: argv}, 'Can not figure out instance type.')
       process.exit(2)
   }
+}
+
+// on local mashine get up to date data
+local.prototype.get = function(key, args) {
+  var self = this
+  // Create a new fiber which yields data
+  return Fiber(function() {
+    if ( args !== false && /^_\.(?!argv)/.test(key) ) {
+      shell.run(key+'.sh', {args: args}, function(err, result) {
+        if ( err ) bunyan.error({error: err}, '%s failed!', key)
+        if ( typeof result[0] == 'object' )
+          self.set(key, result[0])
+
+        Fiber.yield(result[0])
+      })
+    }
+    // Return data right away
+    else Fiber.yield(self.data[key])
+  }).run()
 }
 
 // singleton

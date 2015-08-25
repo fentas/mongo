@@ -19,8 +19,8 @@ module.exports = exports = new function() {
   var use = new mongos()
 
     // first run
-    common.on('_initialize', function(instances) {
-
+    common.on('_initialize', function() {
+      //TODO: look out for shards. compare what is registered and what isn't.
     })
 
     use.on('sh.addShard', function(instance) {

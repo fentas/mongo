@@ -18,6 +18,8 @@ ENV MONGO_CLUSTER_UDP_PORT=27023
 ENV MONGO_CLUSTER_TIMEOUT=5000
 ENV MONGO_CLUSTER_RETRIES=3
 
+ENV BUNYAN_STDOUT_LEVEL='info'
+
 # add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added
 RUN groupadd -r mongodb && useradd -r -g mongodb mongodb
 
