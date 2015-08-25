@@ -96,16 +96,24 @@ COPY ./cluster /opt
 
 COPY docker-entrypoint.sh /entrypoint.sh
 RUN \
+  touch /run/mongodb.pid && \
+  chown mongodb:mongodb /run/mongodb.pid && \
   chown mongodb:mongodb /entrypoint.sh && \
   chmod +x /entrypoint.sh
-USER mongodb
+
 ENTRYPOINT ["/entrypoint.sh"]
 
 # udp port
-EXPOSE 27023
+EXPOSE $MONGO_CLUSTER_UDP_PORT
 
 # default shard server port
 EXPOSE 27017
 # default mongod port
 EXPOSE 27018
+# default mongod --configsvr port
+EXPOSE 27019
+# http monitoring
+EXPOSE 28017
+EXPOSE 28018
+EXPOSE 28019
 CMD ["mongod"]
