@@ -1,5 +1,4 @@
-var udp = require('../../utils/udp'),
-    middleware = require('../../utils/middleware'),
+var middleware = require('../../utils/middleware'),
     common = require('../common'),
     local = require('../local'),
     util = require('util'),
