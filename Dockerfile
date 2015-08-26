@@ -95,9 +95,9 @@ VOLUME /data/db
 VOLUME /data/configdb
 
 COPY ./cluster /opt
-
 COPY docker-entrypoint.sh /entrypoint.sh
 RUN \
+  cd /opt && npm install && \
   touch /run/mongodb.pid && \
   chown mongodb:mongodb /run/mongodb.pid
 
