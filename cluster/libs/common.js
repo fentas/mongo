@@ -1,6 +1,6 @@
 var udp = require('../utils/udp'),
     middleware = require('../utils/middleware'),
-    instance = require('./instance'),
+    Instance = require('./instance'),
     local = require('./local'),
     exec = require('../utils/exec'),
     util = require('util'),
@@ -16,7 +16,7 @@ function common() {
 }
 
 common.prototype.addInstance = function(host, type) {
-  var inst = new instance(host, type)
+  var inst = new Instance(host, type)
   this[type].push(inst)
   return inst
 }
@@ -62,7 +62,7 @@ common.prototype.lookupMongoCluster = function(itype) {
     if ( /^https?/.test(list) ) {
       bunyan.debug({list: list}, 'Recognized MONGO_CLUSTER_INSTANCES as http url.')
 
-      list = exec('curl -s -L "'+list+'"')
+      list = exec('echo `curl -sSL \''+list+'\'`')
       if ( list.code !== 0 ) bunyan.error({shell: list}, 'bash script returned error code.')
       instances = list.output
     }
@@ -84,14 +84,14 @@ common.prototype.lookupMongoCluster = function(itype) {
       for ( var i = 0 ; i < instances.length ; i++ ) {
         if ( ! instances[i] ) continue
 
-        (function(instance) {
-          bunyan.debug({instance: instance}, 'Resolve A records.')
+        (function(instance_address) {
+          bunyan.debug({instance: instance_address}, 'Resolve A records.')
 
-          dns.resolve(instance.split(':')[0], 'A', function(error, addresses) {
+          dns.resolve(instance_address.split(':')[0], 'A', function(error, addresses) {
             if ( error ) {
               bunyan.debug({error: error}, 'No A records, error occured')
 
-              var inst = new instance(instance, type)
+              var inst = new Instance(instance_address, type)
               inst.lookup(function(error) {
                 if ( error ) {
                   --count
@@ -112,7 +112,7 @@ common.prototype.lookupMongoCluster = function(itype) {
             count += addresses.length - 1
 
             for ( var x = 0 ; x < addresses.length ; x++ ) {
-               var inst = new instance(addresses[x] + (':'+instance.split(':')[1] || '').replace(/:$/, ''), type)
+               var inst = new Instance(addresses[x] + (':'+instance_address.split(':')[1] || '').replace(/:$/, ''), type)
                inst.ping(pong)
                self[type].push(inst)
             }
