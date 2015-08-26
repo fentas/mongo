@@ -1,6 +1,7 @@
 var middleware = require('../../utils/middleware'),
     shell = require('../../utils/shell'),
     common = require('../common'),
+    util = require('util'),
     local = require('../local'),
     bunyan = require('../../utils/bunyan')()
 
