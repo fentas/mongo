@@ -49,6 +49,7 @@ common.prototype.lookupMongoCluster = function(itype) {
         pongCount = 0,
 
         pong = function() {
+          bunyan.debug('Instance %s of %s loaded.', pongCount+1, count)
           if ( ++pongCount == count ) {
             bunyan.info('Pong complete.')
             if ( typeof itype == 'function' )
@@ -62,14 +63,14 @@ common.prototype.lookupMongoCluster = function(itype) {
       bunyan.debug({list: list}, 'Recognized MONGO_CLUSTER_INSTANCES as http url.')
 
       list = exec('curl -s -L "'+list+'"')
-      if ( list.code === 0 ) bunyan.error({shell: list}, 'bash script returned error code.')
+      if ( list.code !== 0 ) bunyan.error({shell: list}, 'bash script returned error code.')
       instances = list.output
     }
     else if ( /^#/.test(list) ) {
       bunyan.debug({list: list}, 'Recognized MONGO_CLUSTER_INSTANCES as bash script.')
 
       list = exec(list.substr(1))
-      if ( list.code === 0 ) bunyan.error({shell: list}, 'bash script returned error code.')
+      if ( list.code !== 0 ) bunyan.error({shell: list}, 'bash script returned error code.')
       instances = list.output
     }
     else instances = list
@@ -81,47 +82,49 @@ common.prototype.lookupMongoCluster = function(itype) {
       count = instances.length
 
       for ( var i = 0 ; i < instances.length ; i++ ) {
-        bunyan.debug({instance: instances[i]}, 'Resolve A records.')
+        if ( ! instances[i] ) continue
 
-        dns.resolve(instances[i], 'A', function(error, addresses) {
-          if ( error ) {
-            bunyan.debug({instance: instances[i], error: error}, 'No A records, error occured')
-            bunyan.debug({instance: instances[i].split(':')[0]}, 'Lookup instance.')
+        (function(instance) {
+          bunyan.debug({instance: instance}, 'Resolve A records.')
 
+          dns.resolve(instance.split(':')[0], 'A', function(error, addresses) {
+            if ( error ) {
+              bunyan.debug({error: error}, 'No A records, error occured')
 
-            var inst = new instance(address + (':'+instances[i].split(':')[1] || '').replace(/:$/, '') , type)
-            inst.lookup(function(error) {
-              if ( error ) {
-                --count
-                return
-              }
+              var inst = new instance(instance, type)
+              inst.lookup(function(error) {
+                if ( error ) {
+                  --count
+                  return
+                }
 
-              inst.ping(pong)
-              self[type].push(inst)
+                inst.ping(pong)
+                self[type].push(inst)
 
-              if ( self[type].length == count ) {
-                bunyan.debug('Everything resolved. Waiting for pong.')
-              }
-            })
-            return
-          }
+                if ( self[type].length == count ) {
+                  bunyan.debug('Everything resolved. Waiting for pong.')
+                }
+              })
+              return
+            }
 
-          bunyan.debug('A records found')
-          count += addresses.length - 1
+            bunyan.debug('A records found')
+            count += addresses.length - 1
 
-          for ( var x = 0 ; x < addresses.length ; x++ ) {
-             var inst = new instance(addresses[x], type)
-             inst.ping(pong)
-             self[type].push(inst)
-          }
+            for ( var x = 0 ; x < addresses.length ; x++ ) {
+               var inst = new instance(addresses[x] + (':'+instance.split(':')[1] || '').replace(/:$/, ''), type)
+               inst.ping(pong)
+               self[type].push(inst)
+            }
 
-          if ( self[type].length == count ) {
-            bunyan.debug('Everything resolved. Waiting for pong.')
-          }
-        })
+            if ( self[type].length == count ) {
+              bunyan.debug('Everything resolved. Waiting for pong.')
+            }
+          })
+        })(instances[i])
       }
     }
-    else bunyan.fatal({instances: instances}, 'Maleformed mongo instance list.')
+    else bunyan.warn({instances: instances}, 'Maleformed mongo instance list.')
   })
 }
 
