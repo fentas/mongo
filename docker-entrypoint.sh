@@ -11,7 +11,7 @@ if [ "$1" = 'mongod' ] || [ "$1" = 'mongos' ]; then
 	if [ ! -z $MONGO_CLUSTER_ENABLED ]; then
 		function watchCluster() {
 			sleep 10
-			forever start /opt/index.js "$@"
+			/usr/bin/nodejs /opt/index.js "$@" &
 		}
 		watchCluster "$@" &
 	fi
