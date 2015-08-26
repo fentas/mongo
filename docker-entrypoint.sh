@@ -8,7 +8,7 @@ fi
 if [ "$1" = 'mongod' ] || [ "$1" = 'mongos' ]; then
 	chown -R mongodb /data/db /data/configdb
 
-	if [ ! -z $MONGO_CLUSTER_SERVER ]; then
+	if [ ! -z $MONGO_CLUSTER_ENABLED ]; then
 		function watchCluster() {
 			sleep 10
 			forever start /opt/cluster/index.js "$@"

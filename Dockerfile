@@ -7,6 +7,8 @@ ENV MONGO_VERSION 3.1.6
 # set cluster child (shards, config) server ips
 # e.g. x.x.x.x:pppp[,...]
 #
+ENV MONGO_CLUSTER_ENABLED=1
+
 ENV MONGO_CLUSTER_CONFIGSVR=""
 ENV MONGO_CLUSTER_SHARDS=""
 ENV MONGO_CLUSTER_MONGOS=""
@@ -97,9 +99,7 @@ COPY ./cluster /opt
 COPY docker-entrypoint.sh /entrypoint.sh
 RUN \
   touch /run/mongodb.pid && \
-  chown mongodb:mongodb /run/mongodb.pid && \
-  chown mongodb:mongodb /entrypoint.sh && \
-  chmod +x /entrypoint.sh
+  chown mongodb:mongodb /run/mongodb.pid
 
 ENTRYPOINT ["/entrypoint.sh"]
 
