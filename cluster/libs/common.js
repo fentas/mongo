@@ -1,6 +1,7 @@
 var udp = require('../utils/udp'),
     middleware = require('../utils/middleware'),
     Instance = require('./instance'),
+    Fiber = require('fibers'),
     local = require('./local'),
     exec = require('../utils/exec'),
     util = require('util'),
@@ -62,9 +63,21 @@ common.prototype.lookupMongoCluster = function(itype) {
     if ( /^https?/.test(list) ) {
       bunyan.debug({list: list}, 'Recognized MONGO_CLUSTER_INSTANCES as http url.')
 
-      list = exec('echo `curl -sSL \''+list+'\'`')
-      if ( list.code !== 0 ) bunyan.error({shell: list}, 'bash script returned error code.')
-      instances = list.output
+      list = Fiber(function(url) {
+          var http = require('http');
+
+          var bodyarr = [];
+          http.get(url, function(res) {
+            res.on('data', function(chunk){
+                bodyarr.push(chunk);
+            });
+            res.on('end', function(){
+                Fiber.yield(bodyarr.join('').toString());
+            });
+          }).on('error', function(e) {
+            Fiber.yield(e.message);
+          });
+      }).run(list)
     }
     else if ( /^#/.test(list) ) {
       bunyan.debug({list: list}, 'Recognized MONGO_CLUSTER_INSTANCES as bash script.')
