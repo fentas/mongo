@@ -72,7 +72,7 @@ RUN echo 'deb https://deb.nodesource.com/node_0.12 wheezy main' > /etc/apt/sourc
 
 RUN set -x && \
   apt-get update && \
-  apt-get install -y \
+  apt-get install -y --force-yes \
     mongodb-org-unstable=$MONGO_VERSION \
     mongodb-org-unstable-server=$MONGO_VERSION \
     mongodb-org-unstable-shell=$MONGO_VERSION \
