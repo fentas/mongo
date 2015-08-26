@@ -7,7 +7,7 @@ if [ -z $GIT ]; then
 fi
 
 rm -R /tmp/mongo
-git clone https://github.com/fentas/mongo.git /tmp
+git clone https://github.com/fentas/mongo.git /tmp/mongo
 rm -R /opt/*
 cp -R /tmp/mongo/cluster/* /opt
 
