@@ -38,7 +38,7 @@ common.prototype.lookupMongoCluster = function(itype) {
     process.env['MONGO_CLUSTER_SHARDS'],
     process.env['MONGO_CLUSTER_MONGOS']
   ]
-  .forEach(function(env, z) {
+  .forEach(function resolve(env, z) {
     if ( ! env ) return;
 
     var type = ['configsvr', 'shard', 'mongos'][z],
@@ -63,21 +63,24 @@ common.prototype.lookupMongoCluster = function(itype) {
     if ( /^https?/.test(list) ) {
       bunyan.debug({list: list}, 'Recognized MONGO_CLUSTER_INSTANCES as http url.')
 
-      list = Fiber(function(url) {
-          var http = require('http');
+      var http = require('http'),
+          callee = (resolve || arguments.callee),
+          bodyarr = []
 
-          var bodyarr = [];
-          http.get(url, function(res) {
-            res.on('data', function(chunk){
-                bodyarr.push(chunk);
-            });
-            res.on('end', function(){
-                Fiber.yield(bodyarr.join('').toString());
-            });
-          }).on('error', function(e) {
-            Fiber.yield(e.message);
-          });
-      }).run(list)
+      http.get(list, function(res) {
+        res.on('data', function(chunk){
+            bodyarr.push(chunk);
+        })
+        res.on('end', function(){
+          var res = bodyarr.join('').toString()
+          bunyan.debug({result: res}, 'Http request successfull.')
+          callee(res, z)
+        })
+      }).on('error', function(e) {
+        bunyan.error({error: e}, 'Http request resolved into an error.')
+      })
+
+      return
     }
     else if ( /^#/.test(list) ) {
       bunyan.debug({list: list}, 'Recognized MONGO_CLUSTER_INSTANCES as bash script.')
