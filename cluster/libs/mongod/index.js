@@ -10,13 +10,13 @@ shell.defaultOptions = {
   mode: 'json'
 }
 
-util.inherits(shard, middleware)
-function shard() {
+util.inherits(mongod, middleware)
+function mongod() {
 
 }
 
 module.exports = exports = new function() {
-  var use = new shard()
+  var use = new mongod()
 
   use.on('rs.add', function(instance) {
     var self = this
@@ -31,7 +31,7 @@ module.exports = exports = new function() {
       })
       // make sure members are clean and all there
       common.lookupMongoCluster(function() {
-        var rs = common.getInstances('shards').filter(function(instance) {
+        var rs = common.getInstances('mongod').filter(function(instance) {
           //TODO: what if config file is used.
           if ( instance.get('_.argv').replSet == local.get('_.argv').replSet )
             return true
@@ -76,7 +76,7 @@ module.exports = exports = new function() {
       bunyan.info({status: rs_status}, 'Instance is single mongod instance; no replSet.')
     }
     else if ( rs_status.startupStatus ) {
-      var rs = common.getInstances('shard').filter(function(instance, i) {
+      var rs = common.getInstances('mongod').filter(function(instance, i) {
         //TODO: what if config file is used.
         if ( instance.get('_.argv').replSet == local.get('_.argv').replSet )
           return true
@@ -128,7 +128,7 @@ module.exports = exports = new function() {
               local.set('_.rs.status', result[0])
             })
 
-            // if shard there is a mongo, then register to mongos
+            // if shard there is a mongos, then register to mongos
             // TODO: what if mongos is not started yet?
             var mongos = common.getInstances('mongos')[0]
             if ( mongos ) mongos.emit('sh.addShard')

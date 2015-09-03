@@ -11,7 +11,7 @@ var udp = require('../utils/udp'),
 util.inherits(common, middleware)
 function common() {
   this.configsvr = null
-  this.shard = null
+  this.mongod = null
   this.mongos = null
   this.count = 0
 }
@@ -35,13 +35,13 @@ common.prototype.lookupMongoCluster = function(itype) {
 
   [
     process.env['MONGO_CLUSTER_CONFIGSVR'],
-    process.env['MONGO_CLUSTER_SHARDS'],
+    process.env['MONGO_CLUSTER_MONGOD'],
     process.env['MONGO_CLUSTER_MONGOS']
   ]
   .forEach(function resolve(env, z) {
     if ( ! env ) return;
 
-    var type = ['configsvr', 'shard', 'mongos'][z],
+    var type = ['configsvr', 'mongod', 'mongos'][z],
         self = this,
         list = env,
         instances = null,
@@ -65,16 +65,16 @@ common.prototype.lookupMongoCluster = function(itype) {
 
       var http = require('http'),
           callee = (resolve || arguments.callee),
-          bodyarr = []
+          body = []
 
       http.get(list, function(res) {
         res.on('data', function(chunk){
-            bodyarr.push(chunk);
+            body.push(chunk);
         })
         res.on('end', function(){
-          var res = bodyarr.join('').toString()
-          bunyan.debug({result: res}, 'Http request successfull.')
-          callee(res, z)
+          body = body.join('').toString()
+          bunyan.debug({result: body}, 'Http request successfull.')
+          callee(body, z)
         })
       }).on('error', function(e) {
         bunyan.error({error: e}, 'Http request resolved into an error.')

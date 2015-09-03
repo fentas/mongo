@@ -28,7 +28,7 @@ function local() {
         this.set('port', (argv['port'] ? argv['port'] : 27019))
       }
       else {
-        this.set('type', 'shard')
+        this.set('type', 'mongod')
         this.set('port', (
           argv['port'] ? argv['port'] : ( argv['shardsvr'] ? 27018 : 27017 ))
         )

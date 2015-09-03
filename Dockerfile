@@ -1,16 +1,13 @@
 FROM debian:wheezy
 MAINTAINER Jan Guth <jan.guth@gmail.com>
 
-ENV MONGO_MAJOR 3.1
-ENV MONGO_VERSION 3.1.6
+ENV MONGO_MAJOR 3.0
+ENV MONGO_VERSION 3.0.6
 
-# set cluster child (shards, config) server ips
-# e.g. x.x.x.x:pppp[,...]
-#
 ENV MONGO_CLUSTER_ENABLED=1
 
 ENV MONGO_CLUSTER_CONFIGSVR=""
-ENV MONGO_CLUSTER_SHARDS=""
+ENV MONGO_CLUSTER_MONGOD=""
 ENV MONGO_CLUSTER_MONGOS=""
 
 ENV MONGO_CLUSTER_CNAME=""
@@ -72,12 +69,12 @@ RUN echo 'deb https://deb.nodesource.com/node_0.12 wheezy main' > /etc/apt/sourc
 
 RUN set -x && \
   apt-get update && \
-  apt-get install -y --force-yes \
-    mongodb-org-unstable=$MONGO_VERSION \
-    mongodb-org-unstable-server=$MONGO_VERSION \
-    mongodb-org-unstable-shell=$MONGO_VERSION \
-    mongodb-org-unstable-mongos=$MONGO_VERSION \
-    mongodb-org-unstable-tools=$MONGO_VERSION \
+  apt-get install -y \
+		mongodb-org=$MONGO_VERSION \
+		mongodb-org-server=$MONGO_VERSION \
+		mongodb-org-shell=$MONGO_VERSION \
+		mongodb-org-mongos=$MONGO_VERSION \
+		mongodb-org-tools=$MONGO_VERSION \
     nodejs \
   && rm -rf /var/lib/apt/lists/* \
   && rm -rf /var/lib/mongodb \
@@ -106,9 +103,9 @@ ENTRYPOINT ["/entrypoint.sh"]
 # udp port
 EXPOSE $MONGO_CLUSTER_UDP_PORT
 
-# default shard server port
+# default mongod server port
 EXPOSE 27017
-# default mongod port
+# default mongod shard port
 EXPOSE 27018
 # default mongod --configsvr port
 EXPOSE 27019
